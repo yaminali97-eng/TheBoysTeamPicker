@@ -1,1 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Balanced Team Picker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #020617, #0f172a);
+      color: #f8fafc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #020617;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      text-align: center;
+      width: 360px;
+    }
+    h1 { margin-bottom: 10px; }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      margin-top: 15px;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: bold;
+      background: #22c55e;
+      color: #022c22;
+    }
+    button:disabled { background: #334155; cursor: not-allowed; }
+
+    .countdown {
+      font-size: 28px;
+      margin-top: 15px;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    .teams {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 25px;
+      text-align: left;
+    }
+    .team {
+      width: 45%;
+      padding: 10px;
+      border-radius: 12px;
+    }
+    .red { background: rgba(239,68,68,0.2); }
+    .blue { background: rgba(59,130,246,0.2); }
+    .team h3 { margin-top: 0; }
+
+    .locked {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #22c55e;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Team Picker</h1>
+    <p>Enter your name to be assigned</p>
+
+    <input id="nameInput" type="text" placeholder="Your name" />
+    <button id="joinBtn" onclick="startCountdown()">Join a Team</button>
+
+    <div id="countdown" class="countdown"></div>
+    <div id="status"></div>
+
+    <div class="teams">
+      <div class="team red">
+        <h3>🔴 Red Team</h3>
+        <ul id="redList"></ul>
+      </div>
+      <div class="team blue">
+        <h3>🔵 Blue Team</h3>
+        <ul id="blueList"></ul>
+      </div>
+    </div>
+
+    <div id="locked" class="locked"></div>
+  </div>
+
+  <audio id="tickSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+  <audio id="joinSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+  <script>
+    const allowedNames = ['Yamin','Anthony','Pete','Ben','Hamish','Tom','Ryan','Ollie'];
+    let state = JSON.parse(localStorage.getItem('teamState')) || {
+      red: [], blue: [], locked: false
+    };
+
+    const redList = document.getElementById('redList');
+    const blueList = document.getElementById('blueList');
+    const lockedDiv = document.getElementById('locked');
+
+    function renderTeams() {
+      redList.innerHTML = state.red.map(n => `<li>${n}</li>`).join('');
+      blueList.innerHTML = state.blue.map(n => `<li>${n}</li>`).join('');
+
+      if (state.red.length + state.blue.length === 8) {
+        state.locked = true;
+        lockedDiv.innerText = '✅ Teams Locked!';
+        document.getElementById('joinBtn').disabled = true;
+      }
+    }
+
+    renderTeams();
+
+    function startCountdown() {
+      const name = document.getElementById('nameInput').value.trim();
+      const status = document.getElementById('status');
+      const countdownDiv = document.getElementById('countdown');
+
+      if (!allowedNames.includes(name)) {
+        status.innerHTML = '<span style="color:#f87171">Name not on the list</span>';
+        return;
+      }
+      if (state.red.includes(name) || state.blue.includes(name)) {
+        status.innerHTML = 'You are already assigned!';
+        return;
+      }
+      if (state.locked) return;
+
+      let count = 3;
+      countdownDiv.innerText = count;
+      document.getElementById('tickSound').play();
+
+      const interval = setInterval(() => {
+        count--;
+        document.getElementById('tickSound').play();
+        if (count === 0) {
+          clearInterval(interval);
+          countdownDiv.innerText = '';
+          assignTeam(name);
+        } else {
+          countdownDiv.innerText = count;
+        }
+      }, 1000);
+    }
+
+    function assignTeam(name) {
+      const joinSound = document.getElementById('joinSound');
+
+      if (state.red.length < 4 && state.blue.length < 4) {
+        Math.random() < 0.5 ? state.red.push(name) : state.blue.push(name);
+      } else if (state.red.length < 4) {
+        state.red.push(name);
+      } else {
+        state.blue.push(name);
+      }
+
+      joinSound.play();
+      localStorage.setItem('teamState', JSON.stringify(state));
+      renderTeams();
+    }
+  </script>
+</body>
+</html>
 
